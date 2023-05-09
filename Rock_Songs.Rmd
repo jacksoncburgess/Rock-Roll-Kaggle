@@ -1,0 +1,192 @@
+---
+title: "Kaggle Rock&Roll"
+author: "JCB"
+date: "2023-05-09"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Rock and Roll-Data Analysis with GGplot in R
+
+## Introduction
+
+Purpose- To exhibit proficiency in R's package ggplot2(ggplot). This package allows the users to visualize data in different and interesting ways.
+
+### Load the Packages
+
+Load the following packages:
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+```
+
+Tidyverse: The tidyverse is an opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures. ggplot2: ggplot2 is a system for creating graphics, based on The Grammar of Graphics. You provide the data, tell ggplot2 how to map variables to aesthetics, what graphical primitives to use, and it takes care of the details. lubridate: Lubridate makes it easier to do the things R does with date-times and possible to do the things R does not.
+
+### Read the Data
+
+```{r}
+Rock.df <- read.csv("history_of_rock.csv")
+```
+
+Rock.df is now a dataframe that contains the data in the "history_of_rock.csv" file downloaded from Kaggle. <https://www.kaggle.com/datasets/lukaszamora/history-of-rock-19502020>
+
+### Filter and Order Data into New Variables
+
+```{r}
+Pop_Order.df <- Rock.df[with(Rock.df,order(-popularity)),]
+Top100.df <- Pop_Order.df[1:100,]
+Fav_Bands.df <- filter(Rock.df, artist == 'Green Day' |artist== 'U2' | artist=='Led Zeppelin' | artist=='AC/DC' | artist=='The Beatles')
+```
+
+This gives me the data frame ordered by popularity in descending order. Top100.df now contains the top 100 most popular songs in the dataframe. Fav_Bands.df now includes 5 bands. This is just to illustrate the concept of filtering and ordering dataframes.
+
+### Glimpse the data
+
+Get an idea for what sort of data you are working with. I prefer glimpse(), but you can get a look into your data using other functions such as: head(), colnames(), summarize()
+
+```{r}
+glimpse(Top100.df)
+glimpse(Fav_Bands.df)
+```
+
+## Plot the Data
+
+Now it is time to explore the data using ggplot. \### Graph 1.0
+
+```{r}
+ggplot(Top100.df, aes(x= tempo, y= popularity))+
+  geom_point(color='darkred')+
+  geom_smooth(color='black')+
+  labs(title = "Top 100 Rock Songs by Tempo and Popularity Rating",
+       x= "Tempo",
+       y= "Popularity Rating")
+```
+
+Tempo and popularity stood out as interesting variables to begin looking at. I use ggplot, select my data (Top100.df), define my graphs aesthetics (aes). Next I want to create a scatterplot colored red, and a smoothed conditional means chart colored black. Finally I want to add context through labs.
+
+### Graph 1.1
+
+What about the length of songs? Do people hate long songs? Whats the most popular song length?
+
+```{r}
+ggplot(Rock.df, aes( x=length, y=popularity))+
+  geom_jitter(color='darkred')+
+  geom_smooth(color='black')+
+  theme_bw()+
+  labs(title= "Rock Songs by Length and Popularity",
+       x= "Length (min)",
+       y= "Popularity Rating")
+```
+
+This tells us most of the songs are between 2.5 and 5 minutes. The smooth conditional means chart shows us the most popular average length is around 5 minutes.
+
+### Graph 2.0
+
+Now I am curious about the release date of the songs in the top 100. I make a bar graph.
+
+```{r}
+ggplot(Top100.df, aes(x=release_date))+
+  geom_bar(color='black',fill='darkred')+
+  theme_bw()+
+  theme(axis.text.x=element_text(angle=45, hjust=1))+
+  labs(title = "Count of Top 100 Rock Songs by Year",
+       x= "Year",
+       y= "Count")
+```
+
+geom_bar only requires 1- defined variable (x in this case). Note the change in the x axis text angle. Looks like the best year for Rock was 2002. Who would have thought!?
+
+### Graph 3.1
+
+Now that I know about the release date of the top songs, I am curious about release of ALL the rock songs (in the data set).
+
+```{r}
+ggplot(Rock.df, aes(x=release_date))+
+  geom_bar(color='black',fill='darkred')+
+  theme_bw()+
+  labs(title="Count of Rock Songs by Year",
+       x="Year",
+       y="Count")
+```
+
+Looks like 2003 was the year with the MOST rock songs released.
+
+### Graph 4.0
+
+The Years are intersting, but what about the artists? Who has the most hits? Who has the most popular songs?
+
+```{r}
+ggplot(Top100.df,aes(y= fct_rev(fct_infreq(artist))))+
+  geom_bar(fill='darkred',color='black')+
+  theme_bw()+
+  theme(legend.position = "none")+
+  labs(title="Count of Songs by Artist in Top 100 Songs",
+       x="Song Count",
+       y="Artist")
+```
+
+Note the defined y value includes the fct_rev and fct_infreq functions, they allow the frequency of the y value instances to be counted. Coldplay and Red Hot Chili Peppers are the best bands confirmed. Fascinating!
+
+### Graph 5.0
+
+This is interesting but I don't know most of these songs. How about I visualize some of the data from my favorite bands?
+
+```{r}
+ggplot(Fav_Bands.df, aes(y=popularity, x=artist))+
+  geom_boxplot(fill='darkred',color='black')+
+  theme_bw()+
+  labs(title = "Song Popularity Rating by Artist",
+       x=NULL,
+       y="Popularity Rating")
+```
+
+I use Fav_Bands.df as my filtered data set. Since I defined the data to only have 5 artists, I can select 'artist' for my x aesthetic. This makes single continuous variable graphs clean looking and simplified.
+
+### Graph 5.1
+
+I like this group of artists, lets look at their average popularity by year released.
+
+```{r}
+ggplot(Fav_Bands.df, aes(y=popularity, x=release_date,color=artist))+
+  geom_line(stat = "summary",fun="mean", lwd=1)+
+  theme_bw()+
+  labs(title = "Average Song Popularity by Year Released",
+       x= "Year Released",
+       y= "Popularity Rating")+
+  guides(color = guide_legend(title = "Artist"))
+```
+
+Group by artist by using color in ggplot line, stat"summary",fun="mean" will give you the average rating for that year. You can change the legend title using guides().
+
+### Graph 5.2
+
+Let's play with the geom_smooth one again. Let's look for relationships in the data.
+
+```{r}
+ggplot(Fav_Bands.df, aes(x=tempo, y=danceability, color=artist))+
+  geom_smooth()+
+  theme_minimal()+
+  labs(title="Favorite Bands' Songs by Dancibility and Tempo",
+       x="Tempo(bpm)",
+       y= "Danceability",
+       caption = "Optimal Tempo for Optimal Danceability appears to be between 115 and 130 bpm.")+
+  guides(color=guide_legend(title = "Artist"))
+```
+
+Note the added caption. It's an educated guess! You're ready to make the perfect dance song!
+
+### Graph 6.0
+
+Sometimes you won't find any obvious relationships while exploring the ggplot graphs available, and that's OK! It shouldn't be considered wasted time, because you can learn from every graph you make. Even the error messages can help you learn the syntax.
+
+```{r}
+ggplot(Fav_Bands.df, aes (energy,tempo,color=artist))+
+  geom_density_2d_filled(alpha=.2)+
+  theme_classic()+
+  labs(title="Art!",
+       x="Energy Rating",
+       y="Tempo(bpm)")
+```
